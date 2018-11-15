@@ -35,7 +35,7 @@ class Phantoman extends Extension
     ];
 
     /**
-     * A resource representing the PhantomJS process.
+     * A resource representing the Chromedriver process.
      *
      * @var resource
      */
@@ -70,7 +70,7 @@ class Phantoman extends Extension
         }
         parent::__construct($config, $options);
 
-        // Set default path for PhantomJS to "vendor/bin/phantomjs" for if it was
+        // Set default path for Chromedriver to "vendor/bin/chromedriver" for if it was
         // installed via composer.
         if (!isset($this->config['path'])) {
             $this->config['path'] = 'vendor/bin/chromedriver';
@@ -86,8 +86,12 @@ class Phantoman extends Extension
         }
 
         // Set default WebDriver port.
-        if (!isset($this->config['port'])) {
+        if (!isset($this->config['webdriver'])) {
             $this->config['webdriver'] = 9515;
+        }
+
+        if (!isset($this->config['whitelisted-ips'])) {
+            $this->config['whitelisted-ips'] = '127.0.0.1';
         }
 
         // Set default debug mode.
@@ -105,7 +109,7 @@ class Phantoman extends Extension
     }
 
     /**
-     * Start PhantomJS server.
+     * Start Chromedriver server.
      *
      * @throws \Codeception\Exception\ExtensionException
      */
@@ -116,7 +120,7 @@ class Phantoman extends Extension
         }
 
         $this->writeln(PHP_EOL);
-        $this->writeln('Starting PhantomJS Server.');
+        $this->writeln('Starting Chromedriver.');
 
         $command = $this->getCommand();
 
@@ -152,7 +156,7 @@ class Phantoman extends Extension
                 throw new ExtensionException($this, 'Chromedriver never became reachable.');
             }
 
-            $fp = @fsockopen('127.0.0.1', $this->config['port'], $errCode, $errStr, 10);
+            $fp = @fsockopen('127.0.0.1', $this->config['webdriver'], $errCode, $errStr, 10);
             if ($fp) {
                 $this->writeln('');
                 $this->writeln('Chromedriver now accessible.');
@@ -172,7 +176,7 @@ class Phantoman extends Extension
     }
 
     /**
-     * Stop PhantomJS server.
+     * Stop Chromedriver server.
      */
     private function stopServer()
     {
@@ -241,7 +245,7 @@ class Phantoman extends Extension
     }
 
     /**
-     * Get PhantomJS command.
+     * Get Chromedriver command.
      *
      * @return string
      *   Command to execute.
@@ -276,7 +280,7 @@ class Phantoman extends Extension
      */
     public function suiteInit(SuiteEvent $e)
     {
-        // Check if PhantomJS should only be started for specific suites.
+        // Check if Chromedriver should only be started for specific suites.
         if (isset($this->config['suites'])) {
             if (is_string($this->config['suites'])) {
                 $suites = [$this->config['suites']];
@@ -285,14 +289,14 @@ class Phantoman extends Extension
             }
 
             // If the current suites aren't in the desired array, return without
-            // starting PhantomJS.
+            // starting Chromedriver.
             if (!in_array($e->getSuite()->getBaseName(), $suites, true)
                 && !in_array($e->getSuite()->getName(), $suites, true)) {
                 return;
             }
         }
 
-        // Start the PhantomJS server.
+        // Start the Chromedriver.
         $this->startServer();
     }
 }
