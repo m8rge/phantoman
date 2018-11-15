@@ -1,8 +1,8 @@
 {
     "name": "site5/phantoman",
-    "description": "The Codeception extension for automatically starting and stopping PhantomJS when running tests.",
-    "keywords": ["codeception", "extension", "phantomjs", "headless"],
-    "homepage": "https://github.com/grantlucas/phantoman",
+    "description": "The Codeception extension for automatically starting and stopping Chromedriver when running tests.",
+    "keywords": ["codeception", "extension", "phantomjs", "chrome", "chromedriver", "headless"],
+    "homepage": "https://github.com/m8rge/phantoman",
     "license": "MIT",
     "authors": [
         {
@@ -20,6 +20,6 @@
         }
     },
     "suggest": {
-        "jakoch/phantomjs-installer": "Automatically installs PhantomJS locally to your project."
+        "enm1989/chromedriver": "Automatically installs Chromedriver locally to your project."
     }
 }

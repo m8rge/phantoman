@@ -5,7 +5,7 @@ namespace Codeception\Extension;
 /**
  * Phantoman.
  *
- * The Codeception extension for automatically starting and stopping PhantomJS
+ * The Codeception extension for automatically starting and stopping Chrome
  * when running tests.
  *
  * Originally based off of PhpBuiltinServer Codeception extension
@@ -73,7 +73,7 @@ class Phantoman extends Extension
         // Set default path for PhantomJS to "vendor/bin/phantomjs" for if it was
         // installed via composer.
         if (!isset($this->config['path'])) {
-            $this->config['path'] = 'vendor/bin/phantomjs';
+            $this->config['path'] = 'vendor/bin/chromedriver';
         }
 
         // Add .exe extension if running on the windows.
@@ -82,12 +82,12 @@ class Phantoman extends Extension
         }
 
         if (!file_exists(realpath($this->config['path']))) {
-            throw new ExtensionException($this, "PhantomJS executable not found: {$this->config['path']}");
+            throw new ExtensionException($this, "Chromedriver executable not found: {$this->config['path']}");
         }
 
         // Set default WebDriver port.
         if (!isset($this->config['port'])) {
-            $this->config['port'] = 4444;
+            $this->config['webdriver'] = 9515;
         }
 
         // Set default debug mode.
@@ -124,38 +124,38 @@ class Phantoman extends Extension
             $this->writeln(PHP_EOL);
 
             // Output the generated command.
-            $this->writeln('Generated PhantomJS Command:');
+            $this->writeln('Generated Chromedriver Command:');
             $this->writeln($command);
             $this->writeln(PHP_EOL);
         }
 
         $descriptorSpec = [
             ['pipe', 'r'],
-            ['file', $this->getLogDir() . 'phantomjs.output.txt', 'w'],
-            ['file', $this->getLogDir() . 'phantomjs.errors.txt', 'a'],
+            ['file', $this->getLogDir() . 'chromedriver.output.txt', 'w'],
+            ['file', $this->getLogDir() . 'chromedriver.errors.txt', 'a'],
         ];
 
         $this->resource = proc_open($command, $descriptorSpec, $this->pipes, null, null, ['bypass_shell' => true]);
 
         if (!is_resource($this->resource) || !proc_get_status($this->resource)['running']) {
             proc_close($this->resource);
-            throw new ExtensionException($this, 'Failed to start PhantomJS server.');
+            throw new ExtensionException($this, 'Failed to start Chromedriver.');
         }
 
         // Wait till the server is reachable before continuing.
         $max_checks = 10;
         $checks = 0;
 
-        $this->write('Waiting for the PhantomJS server to be reachable.');
+        $this->write('Waiting for the Chromedriver to be reachable.');
         while (true) {
             if ($checks >= $max_checks) {
-                throw new ExtensionException($this, 'PhantomJS server never became reachable.');
+                throw new ExtensionException($this, 'Chromedriver never became reachable.');
             }
 
             $fp = @fsockopen('127.0.0.1', $this->config['port'], $errCode, $errStr, 10);
             if ($fp) {
                 $this->writeln('');
-                $this->writeln('PhantomJS server now accessible.');
+                $this->writeln('Chromedriver now accessible.');
                 fclose($fp);
                 break;
             }
@@ -177,7 +177,7 @@ class Phantoman extends Extension
     private function stopServer()
     {
         if ($this->resource !== null) {
-            $this->write('Stopping PhantomJS Server.');
+            $this->write('Stopping Chromedriver.');
 
             // Wait till the server has been stopped.
             $max_checks = 10;
@@ -186,7 +186,7 @@ class Phantoman extends Extension
                 // unset resource to allow the tests to finish.
                 if ($i === $max_checks - 1 && proc_get_status($this->resource)['running'] === true) {
                     $this->writeln('');
-                    $this->writeln('Unable to properly shutdown PhantomJS server.');
+                    $this->writeln('Unable to properly shutdown Chromedriver.');
                     unset($this->resource);
                     break;
                 }
@@ -194,7 +194,7 @@ class Phantoman extends Extension
                 // Check if the process has stopped yet.
                 if (proc_get_status($this->resource)['running'] === false) {
                     $this->writeln('');
-                    $this->writeln('PhantomJS server stopped.');
+                    $this->writeln('Chromedriver stopped.');
                     unset($this->resource);
                     break;
                 }
@@ -226,39 +226,14 @@ class Phantoman extends Extension
      */
     private function getCommandParameters()
     {
-        // Map our config options to PhantomJS options.
-        $mapping = [
-            'port' => '--webdriver',
-            'proxy' => '--proxy',
-            'proxyType' => '--proxy-type',
-            'proxyAuth' => '--proxy-auth',
-            'webSecurity' => '--web-security',
-            'ignoreSslErrors' => '--ignore-ssl-errors',
-            'sslProtocol' => '--ssl-protocol',
-            'sslCertificatesPath' => '--ssl-certificates-path',
-            'remoteDebuggerPort' => '--remote-debugger-port',
-            'remoteDebuggerAutorun' => '--remote-debugger-autorun',
-            'cookiesFile' => '--cookies-file',
-            'diskCache' => '--disk-cache',
-            'maxDiskCacheSize' => '--max-disk-cache-size',
-            'loadImages' => '--load-images',
-            'localStoragePath' => '--local-storage-path',
-            'localStorageQuota' => '--local-storage-quota',
-            'localToRemoteUrlAccess' => '--local-to-remote-url-access',
-            'outputEncoding' => '--output-encoding',
-            'scriptEncoding' => '--script-encoding',
-            'webdriverLoglevel' => '--webdriver-loglevel',
-            'webdriverLogfile' => '--webdriver-logfile',
-        ];
-
         $params = [];
         foreach ($this->config as $configKey => $configValue) {
-            if (!empty($mapping[$configKey])) {
+            if (!in_array($configKey, ['suites', 'suites', 'debug'])) {
                 if (is_bool($configValue)) {
                     // Make sure the value is true/false and not 1/0.
                     $configValue = $configValue ? 'true' : 'false';
                 }
-                $params[] = $mapping[$configKey] . '=' . $configValue;
+                $params[] = sprintf('--%s=%s', $configKey, $configValue);
             }
         }
 
